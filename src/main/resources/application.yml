@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: QuoraApp
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: quora_db
+      auto-index-creation: true
+
+  elasticsearch:
+    uris: http://localhost:9200
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/quora_db
+    username: quora
+    password: quora
+
+  sql:
+    init:
+      mode: always

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quora Clone</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <a class="brand" href="#/">Quora Clone</a>
+    <nav>
+      <a href="#/">Questions</a>
+      <a href="#/tags">Tags</a>
+      <a href="#/users">Users</a>
+    </nav>
+    <form id="search-form">
+      <input id="search-input" type="search" placeholder="Search questions" required>
+      <button>Search</button>
+    </form>
+  </header>
+
+  <main id="app"></main>
+
+  <footer>There is no login yet, so every like, dislike, edit and delete is anonymous.</footer>
+  <div id="toast" role="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

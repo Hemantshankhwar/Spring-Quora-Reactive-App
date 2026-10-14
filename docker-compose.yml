@@ -1,0 +1,90 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: quora-mongo
+    ports: ["27017:27017"]
+    volumes:
+      - quora-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: quora-postgres
+    environment:
+      POSTGRES_DB: quora_db
+      POSTGRES_USER: quora
+      POSTGRES_PASSWORD: quora
+    ports: ["5432:5432"]
+    volumes:
+      - quora-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quora -d quora_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    container_name: quora-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports: ["9200:9200"]
+    volumes:
+      - quora-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    restart: unless-stopped
+
+  backend:
+    build: .
+    container_name: quora-backend
+    ports: ["8090:8080"]
+    environment:
+      SPRING_DATA_MONGODB_HOST: mongo
+      SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/quora_db
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      JAVA_TOOL_OPTIONS: -Xmx512m
+      # timestamps are stored without a zone, so keep the container on the laptop's clock
+      TZ: Asia/Kolkata
+    depends_on:
+      mongo:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: quora-frontend
+    ports: ["3000:80"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  quora-pg-data:
+  quora-mongo-data:
+  quora-es-data:

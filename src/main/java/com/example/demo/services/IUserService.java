@@ -1,0 +1,16 @@
+package com.example.demo.services;
+
+import com.example.demo.dto.UserRequestDTO;
+import com.example.demo.dto.UserResponseDTO;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+public interface IUserService {
+
+    Mono<UserResponseDTO> createUser(UserRequestDTO userRequestDTO);
+
+    Mono<UserResponseDTO> getUserById(Long id);
+
+    Flux<UserResponseDTO> getAllUsers();
+}
