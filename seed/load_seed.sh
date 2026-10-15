@@ -30,10 +30,10 @@ echo "Loading Elasticsearch..."
 rm -rf out/es_chunks && mkdir -p out/es_chunks
 split -l 4000 out/es_questions.ndjson out/es_chunks/part_
 for f in out/es_chunks/part_*; do
-  curl -sf -X POST http://localhost:9200/_bulk -H 'Content-Type: application/x-ndjson' --data-binary "@$f" \
+  docker exec -i quora-elasticsearch curl -sf -X POST http://localhost:9200/_bulk -H 'Content-Type: application/x-ndjson' --data-binary @- < "$f" \
     | grep -q '"errors":false' || { echo "Elasticsearch bulk request failed for $f"; exit 1; }
 done
-curl -sf -X POST http://localhost:9200/questions/_refresh > /dev/null
+docker exec quora-elasticsearch curl -sf -X POST http://localhost:9200/questions/_refresh > /dev/null
 
 echo "Loading PostgreSQL users..."
 docker exec -i quora-postgres psql -q -U quora -d quora_db -v ON_ERROR_STOP=1 < out/users.sql
@@ -42,5 +42,5 @@ echo
 echo "Totals now in the databases:"
 docker exec quora-mongo mongosh --quiet quora_db --eval \
   'for (const c of ["tags","questions","answers","comments","likes"]) print("  mongo " + c + ": " + db[c].countDocuments())'
-echo "  elasticsearch questions: $(curl -s http://localhost:9200/questions/_count | sed -E 's/.*"count":([0-9]+).*/\1/')"
+echo "  elasticsearch questions: $(docker exec quora-elasticsearch curl -s http://localhost:9200/questions/_count | sed -E 's/.*"count":([0-9]+).*/\1/')"
 echo "  postgres users: $(docker exec quora-postgres psql -U quora -d quora_db -tAc 'select count(*) from users')"

@@ -2,7 +2,6 @@ services:
   mongo:
     image: mongo:7
     container_name: quora-mongo
-    ports: ["27017:27017"]
     volumes:
       - quora-mongo-data:/data/db
     healthcheck:
@@ -20,7 +19,6 @@ services:
       POSTGRES_DB: quora_db
       POSTGRES_USER: quora
       POSTGRES_PASSWORD: quora
-    ports: ["5432:5432"]
     volumes:
       - quora-pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -38,7 +36,6 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: -Xms512m -Xmx512m
-    ports: ["9200:9200"]
     volumes:
       - quora-es-data:/usr/share/elasticsearch/data
     healthcheck:
@@ -52,7 +49,6 @@ services:
   backend:
     build: .
     container_name: quora-backend
-    ports: ["8090:8080"]
     environment:
       SPRING_DATA_MONGODB_HOST: mongo
       SPRING_R2DBC_URL: r2dbc:postgresql://postgres:5432/quora_db

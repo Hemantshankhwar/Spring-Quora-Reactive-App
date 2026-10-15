@@ -13,7 +13,7 @@ docker info > /dev/null 2>&1 || { echo "Docker is not running. Start Docker Desk
 echo "Building and starting the containers (the first build takes a few minutes)..."
 docker compose up -d --build || {
   echo
-  echo "Start-up failed. If the error mentions a port, stop whatever uses ports 3000, 8090, 27017, 5432 or 9200."
+  echo "Start-up failed. If the error mentions a port, stop whatever uses port 3000."
   exit 1
 }
 

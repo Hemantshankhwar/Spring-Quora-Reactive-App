@@ -214,7 +214,7 @@ erDiagram
 
 ## Docker architecture
 
-`docker compose up` starts five containers on one private network. Only the frontend needs to be reachable from your laptop. The databases publish their ports too, for debugging.
+`docker compose up` starts five containers on one private network. Only the frontend publishes a port to your laptop (3000). The backend and the three databases are reachable only from inside the Docker network.
 
 ```mermaid
 flowchart LR
@@ -233,7 +233,6 @@ flowchart LR
     V3[("volume quora-es-data")]
 
     Laptop -->|"localhost 3000"| FE
-    Laptop -.->|"localhost 8090 optional"| BE
     FE -->|"proxies api calls"| BE
     BE -->|"content"| MG
     BE -->|"users via R2DBC"| PG
@@ -249,10 +248,18 @@ flowchart LR
 | Container | Image | Host port | Container port | Data volume |
 |---|---|---|---|---|
 | `quora-frontend` | built from `frontend/` (nginx 1.27) | **3000** | 80 | none |
-| `quora-backend` | built from `Dockerfile` (Java 21 JRE) | 8090 | 8080 | none |
-| `quora-mongo` | `mongo:7` | 27017 | 27017 | `quora-mongo-data` at `/data/db` |
-| `quora-postgres` | `postgres:16` | 5432 | 5432 | `quora-pg-data` at `/var/lib/postgresql/data` |
-| `quora-elasticsearch` | `elasticsearch:8.14.3` | 9200 | 9200 | `quora-es-data` at `/usr/share/elasticsearch/data` |
+| `quora-backend` | built from `Dockerfile` (Java 21 JRE) | none | 8080 | none |
+| `quora-mongo` | `mongo:7` | none | 27017 | `quora-mongo-data` at `/data/db` |
+| `quora-postgres` | `postgres:16` | none | 5432 | `quora-pg-data` at `/var/lib/postgresql/data` |
+| `quora-elasticsearch` | `elasticsearch:8.14.3` | none | 9200 | `quora-es-data` at `/usr/share/elasticsearch/data` |
+
+To inspect a database, run the client inside its container:
+
+```bash
+docker exec -it quora-mongo mongosh quora_db
+docker exec -it quora-postgres psql -U quora -d quora_db
+docker exec quora-elasticsearch curl -s localhost:9200/questions/_count
+```
 
 ### Startup order
 
@@ -278,7 +285,7 @@ nginx serves the static UI and forwards every `/api/...` request to `http://back
 
 ## Quick start
 
-Requirements: Docker Desktop with at least 4 GB of memory, and free ports 3000, 8090, 27017, 5432 and 9200. Java, Gradle and Python are not needed on your machine, because everything runs in containers.
+Requirements: Docker Desktop with at least 4 GB of memory, and free port 3000. Java, Gradle and Python are not needed on your machine, because everything runs in containers.
 
 ```bash
 ./start.sh                       # build, start, and load demo data if the app is empty
@@ -348,7 +355,7 @@ Set on `quora-backend` in `docker-compose.yml`. They override the defaults in `s
 
 ## API reference
 
-Base URL: `http://localhost:3000/api` through the frontend, or `http://localhost:8090/api` straight to the backend. Bodies and responses are JSON. Ids of questions, answers, comments, likes and tags are 24-character strings, and user ids are numbers.
+Base URL: `http://localhost:3000/api` (nginx forwards it to the backend, which has no host port of its own). Bodies and responses are JSON. Ids of questions, answers, comments, likes and tags are 24-character strings, and user ids are numbers.
 
 Errors use Spring's standard JSON body: `timestamp`, `path`, `status`, `error` and `requestId`.
 
